@@ -7,11 +7,17 @@ Launch demo "xe chạy + né vật cản":
 Chạy: ros2 launch strawberry_bot avoid_demo.launch.py
 """
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     return LaunchDescription([
+        # Đổi cổng LiDAR ngay từ dòng lệnh, không cần sửa file:
+        #   ros2 launch strawberry_bot avoid_demo.launch.py lidar_port:=/dev/ttyUSB1
+        DeclareLaunchArgument('lidar_port', default_value='/dev/ttyUSB0'),
+
         # Driver LiDAR SLAMTEC C1 — cần cài gói sllidar_ros2 trước
         Node(
             package='sllidar_ros2',
@@ -19,7 +25,7 @@ def generate_launch_description():
             name='sllidar_node',
             parameters=[{
                 'channel_type': 'serial',
-                'serial_port': '/dev/ttyUSB0',   # đổi nếu C1 nhận cổng khác
+                'serial_port': LaunchConfiguration('lidar_port'),
                 'serial_baudrate': 460800,       # C1 dùng 460800
                 'frame_id': 'laser',
                 'inverted': False,
