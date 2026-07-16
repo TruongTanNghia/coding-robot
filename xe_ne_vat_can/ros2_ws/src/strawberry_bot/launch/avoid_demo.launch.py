@@ -28,6 +28,17 @@ def generate_launch_description():
             output='screen',
         ),
 
+        # TF tĩnh base_link -> laser: demo né chưa cần, nhưng SLAM/RViz2 bắt buộc.
+        # Đo lại x (m, LiDAR lệch trước/sau tâm xe) và z (độ cao LiDAR) trên xe thật.
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='laser_tf',
+            arguments=['--x', '0.0', '--y', '0.0', '--z', '0.10',
+                       '--roll', '0', '--pitch', '0', '--yaw', '0',
+                       '--frame-id', 'base_link', '--child-frame-id', 'laser'],
+        ),
+
         Node(
             package='strawberry_bot',
             executable='base_bridge',

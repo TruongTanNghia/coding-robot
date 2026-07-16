@@ -16,6 +16,7 @@ Chạy: ros2 run strawberry_bot obstacle_avoider
 import math
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
@@ -116,13 +117,19 @@ def main():
     node = ObstacleAvoider()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
-        # Dừng xe khi tắt node
-        node.pub.publish(Twist())
+        # Dừng xe khi tắt node (nếu context đã chết thì base_bridge + watchdog
+        # Arduino vẫn tự dừng motor trong 500ms nên không sao)
+        if rclpy.ok():
+            try:
+                node.pub.publish(Twist())
+            except Exception:
+                pass
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

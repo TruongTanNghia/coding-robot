@@ -11,6 +11,7 @@ import math
 import threading
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from geometry_msgs.msg import Twist, TransformStamped
 from nav_msgs.msg import Odometry
@@ -92,7 +93,10 @@ class BaseBridge(Node):
         while not self._stop and rclpy.ok():
             try:
                 line = self.ser.readline().decode(errors='ignore').strip()
-            except serial.SerialException:
+            except (serial.SerialException, OSError, TypeError):
+                # cổng serial bị đóng khi node tắt -> thoát êm
+                if self._stop:
+                    break
                 continue
             if not line.startswith('E'):
                 continue
@@ -160,8 +164,10 @@ class BaseBridge(Node):
 
     def destroy_node(self):
         self._stop = True
+        self.reader.join(timeout=0.5)   # chờ thread đọc thoát rồi mới đóng cổng
         try:
             self.ser.write(b'S\n')
+            self.ser.flush()
             self.ser.close()
         except Exception:
             pass
@@ -173,11 +179,12 @@ def main():
     node = BaseBridge()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':
