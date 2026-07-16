@@ -14,9 +14,14 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     return LaunchDescription([
-        # Đổi cổng LiDAR ngay từ dòng lệnh, không cần sửa file:
+        # Cổng LiDAR: mặc định trỏ theo serial CP2102N của C1 (đường dẫn by-id
+        # cố định, không bị nhảy ttyUSB0/1 khi cắm lại). Đổi lúc chạy nếu cần:
         #   ros2 launch strawberry_bot avoid_demo.launch.py lidar_port:=/dev/ttyUSB1
-        DeclareLaunchArgument('lidar_port', default_value='/dev/ttyUSB0'),
+        DeclareLaunchArgument(
+            'lidar_port',
+            default_value='/dev/serial/by-id/'
+                          'usb-Silicon_Labs_CP2102N_USB_to_UART_Bridge_Controller_'
+                          '96929910127fef118cef221cedd322a4-if00-port0'),
 
         # Driver LiDAR SLAMTEC C1 — cần cài gói sllidar_ros2 trước
         Node(
