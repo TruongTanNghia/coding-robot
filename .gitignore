@@ -1,3 +1,9 @@
 *.zip
 __pycache__/
 *.pyc
+
+# Sản phẩm build ROS2 + package clone ngoài — không commit
+xe_ne_vat_can/ros2_ws/build/
+xe_ne_vat_can/ros2_ws/install/
+xe_ne_vat_can/ros2_ws/log/
+xe_ne_vat_can/ros2_ws/src/sllidar_ros2/
