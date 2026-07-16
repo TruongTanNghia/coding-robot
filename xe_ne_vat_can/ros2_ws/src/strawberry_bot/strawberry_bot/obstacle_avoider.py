@@ -35,6 +35,9 @@ class ObstacleAvoider(Node):
         self.declare_parameter('front_angle_deg', 60.0)  # góc quạt phía trước (±30°)
         self.declare_parameter('side_angle_deg', 60.0)   # bề rộng quạt trái/phải
         self.declare_parameter('lidar_yaw_offset_deg', 0.0)  # nếu lidar gắn lệch hướng đầu xe
+        # Bỏ qua mọi điểm gần hơn mức này: đó là trụ chống/khung của chính cái xe,
+        # không phải vật cản. Đo khoảng cách từ tâm LiDAR tới trụ xa nhất + ~5cm.
+        self.declare_parameter('min_valid_dist', 0.25)
 
         self.timer = self.create_timer(0.5, self._watchdog)
         self.last_scan_time = None
@@ -56,6 +59,8 @@ class ObstacleAvoider(Node):
     def sector_min(self, scan: LaserScan, ang_from, ang_to):
         """Khoảng cách nhỏ nhất trong quạt [ang_from, ang_to] (radian, 0 = trước mặt)."""
         offset = math.radians(self.get_parameter('lidar_yaw_offset_deg').value)
+        r_min = max(scan.range_min,
+                    self.get_parameter('min_valid_dist').value)
         n = len(scan.ranges)
         best = float('inf')
         for i in range(n):
@@ -64,7 +69,7 @@ class ObstacleAvoider(Node):
             a = math.atan2(math.sin(a), math.cos(a))
             if ang_from <= a <= ang_to:
                 r = scan.ranges[i]
-                if scan.range_min < r < scan.range_max and not math.isinf(r) and not math.isnan(r):
+                if r_min < r < scan.range_max and not math.isinf(r) and not math.isnan(r):
                     best = min(best, r)
         return best
 
