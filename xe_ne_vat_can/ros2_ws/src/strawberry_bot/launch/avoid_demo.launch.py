@@ -14,14 +14,9 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     return LaunchDescription([
-        # Cổng LiDAR: mặc định trỏ theo serial CP2102N của C1 (đường dẫn by-id
-        # cố định, không bị nhảy ttyUSB0/1 khi cắm lại). Đổi lúc chạy nếu cần:
-        #   ros2 launch strawberry_bot avoid_demo.launch.py lidar_port:=/dev/ttyUSB1
-        DeclareLaunchArgument(
-            'lidar_port',
-            default_value='/dev/serial/by-id/'
-                          'usb-Silicon_Labs_CP2102N_USB_to_UART_Bridge_Controller_'
-                          '96929910127fef118cef221cedd322a4-if00-port0'),
+        # Cổng LiDAR (C1 = chip CP2102N, hiện nhận ở ttyUSB1). Đổi lúc chạy nếu cần:
+        #   ros2 launch strawberry_bot avoid_demo.launch.py lidar_port:=/dev/ttyUSB0
+        DeclareLaunchArgument('lidar_port', default_value='/dev/ttyUSB1'),
 
         # Driver LiDAR SLAMTEC C1 — cần cài gói sllidar_ros2 trước
         Node(
@@ -61,7 +56,9 @@ def generate_launch_description():
                 'wheel_radius': 0.0325,
                 'wheel_separation': 0.18,
                 'ticks_per_rev': 1320.0,
-                'max_wheel_speed': 0.25,
+                # Motor 12V-35rpm + bánh r=3.25cm -> tối đa lý thuyết ~0.12 m/s.
+                # Khai đúng số này thì cruise_speed mới ra PWM đủ mạnh.
+                'max_wheel_speed': 0.12,
                 'min_pwm': 60,
             }],
             output='screen',
@@ -72,8 +69,8 @@ def generate_launch_description():
             executable='obstacle_avoider',
             name='obstacle_avoider',
             parameters=[{
-                'cruise_speed': 0.15,
-                'slow_speed': 0.07,
+                'cruise_speed': 0.10,   # ~85% tốc độ tối đa thực của motor 35rpm
+                'slow_speed': 0.05,
                 'turn_speed': 0.6,
                 'stop_dist': 0.35,
                 'slow_dist': 0.80,
